@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LIN Quant | iOS Pro Terminal</title>
     <script>
-        // 初始化主題以防止閃爍
         document.documentElement.setAttribute('data-theme', localStorage.getItem('lin_theme') || 'light');
         document.documentElement.setAttribute('data-accent', localStorage.getItem('lin_accent') || 'blue');
     </script>
@@ -48,7 +47,7 @@
             <div class="space-y-6">
                 <div>
                     <label class="block text-xs font-bold ios-text-muted mb-3 uppercase tracking-wider">深色模式</label>
-                    <div class="flex gap-2 p-1 ios-bg rounded-lg border ios-border">
+                    <div class="flex gap-2 p-1 bg-black/5 dark:bg-white/5 rounded-lg border ios-border">
                         <button onclick="setTheme('light')" id="btn-theme-light" class="flex-1 py-1.5 text-sm font-bold rounded-md transition-colors">淺色</button>
                         <button onclick="setTheme('dark')" id="btn-theme-dark" class="flex-1 py-1.5 text-sm font-bold rounded-md transition-colors">深色</button>
                     </div>
@@ -242,7 +241,6 @@
         </div>
     </div>
 
-    <!-- 專屬 Footer (極簡化) -->
     <footer class="mt-auto py-5 text-center text-[10px] ios-text-muted opacity-40 font-medium tracking-[0.2em] uppercase">
         DESIGN BY LINCY | 別人恐懼我買進
     </footer>

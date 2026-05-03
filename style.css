@@ -11,9 +11,9 @@
     --primary-soft: rgba(0, 122, 255, 0.1);
     
     /* Semantic Colors */
-    --buy-color: #34c759; /* iOS Green */
+    --buy-color: #34c759;
     --buy-soft: rgba(52, 199, 89, 0.12);
-    --sell-color: #ff3b30; /* iOS Red */
+    --sell-color: #ff3b30;
     --sell-soft: rgba(255, 59, 48, 0.12);
     
     --glass-bg: rgba(255, 255, 255, 0.75);

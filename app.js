@@ -1,3 +1,6 @@
+// ==========================================
+// 系統設定區
+// ==========================================
 const FINMIND_TOKEN = ''; 
 
 let myChart = null;
@@ -19,7 +22,6 @@ function toggleSettings() {
     const content = modal.querySelector('div');
     if (modal.classList.contains('hidden')) {
         modal.classList.remove('hidden');
-        // trigger reflow
         void modal.offsetWidth;
         modal.classList.remove('opacity-0');
         content.classList.remove('translate-y-full', 'sm:translate-y-full');
@@ -34,7 +36,7 @@ function setTheme(t) {
     localStorage.setItem('lin_theme', t);
     document.documentElement.setAttribute('data-theme', t);
     updateThemeButtons(t);
-    if(myChart) loadAnalysisData(document.getElementById('main-symbol-input').value, currentAnalysisTimeframe); // Redraw chart with new colors
+    if(myChart) loadAnalysisData(document.getElementById('main-symbol-input').value, currentAnalysisTimeframe); 
 }
 
 function setAccent(a) {
@@ -66,18 +68,24 @@ function closeModal(id) {
 // === Navigation ===
 function switchView(viewId) {
     ['home', 'analysis', 'portfolio'].forEach(id => {
-        document.getElementById(`view-${id}`).classList.add('hidden');
-        document.getElementById(`tab-${id}`).className = 'tab-inactive h-full px-2 flex items-center transition-colors';
+        const el = document.getElementById(`view-${id}`);
+        if(el) el.classList.add('hidden');
+        const tab = document.getElementById(`tab-${id}`);
+        if(tab) tab.className = 'tab-inactive h-full px-2 flex items-center transition-colors';
     });
-    document.getElementById(`view-${viewId}`).classList.remove('hidden');
-    document.getElementById(`tab-${viewId}`).className = 'tab-active h-full px-2 flex items-center transition-colors';
+    
+    const activeView = document.getElementById(`view-${viewId}`);
+    if(activeView) activeView.classList.remove('hidden');
+    
+    const activeTab = document.getElementById(`tab-${viewId}`);
+    if(activeTab) activeTab.className = 'tab-active h-full px-2 flex items-center transition-colors';
     
     if (viewId === 'home') renderWatchlistUI();
     if (viewId === 'analysis' && myChart) myChart.resize();
     if (viewId === 'portfolio') renderTradesUI(); 
 }
 
-// === API & Core Logic ===
+// === API 防護 ===
 async function fetchWithTimeout(url, retries = 2, timeout = 10000) {
     if (FINMIND_TOKEN) url += (url.includes('?') ? '&' : '?') + `token=${FINMIND_TOKEN}`;
     for (let i = 0; i < retries; i++) {
@@ -130,44 +138,64 @@ function showUIError(msg) {
 const searchInput = document.getElementById('main-symbol-input');
 const autoList = document.getElementById('autocomplete-list');
 let currentFocus = -1;
-searchInput.addEventListener('input', function() {
-    const val = this.value.toUpperCase(); closeAllLists(); if (!val) return false;
-    currentFocus = -1; autoList.classList.remove('hidden');
-    const matches = allTaiwanStocks.filter(s => s.stock_id.includes(val) || s.stock_name.includes(val)).slice(0, 10);
-    if (matches.length === 0) { autoList.innerHTML = `<div class="p-3 text-xs ios-text-muted text-center">查無標的</div>`; return; }
-    matches.forEach(stock => {
-        const item = document.createElement('div'); item.className = 'autocomplete-item';
-        item.innerHTML = `<span class="font-bold mono ios-text">${stock.stock_id}</span> <span class="text-xs font-medium ios-text-muted">${stock.stock_name}</span>`;
-        item.addEventListener('click', () => { executeSearch(stock.stock_id); closeAllLists(); });
-        autoList.appendChild(item);
+if(searchInput) {
+    searchInput.addEventListener('input', function() {
+        const val = this.value.toUpperCase(); closeAllLists(); if (!val) return false;
+        currentFocus = -1; autoList.classList.remove('hidden');
+        const matches = allTaiwanStocks.filter(s => s.stock_id.includes(val) || s.stock_name.includes(val)).slice(0, 10);
+        if (matches.length === 0) { autoList.innerHTML = `<div class="p-3 text-xs ios-text-muted text-center">查無標的</div>`; return; }
+        matches.forEach(stock => {
+            const item = document.createElement('div'); item.className = 'autocomplete-item';
+            item.innerHTML = `<span class="font-bold mono ios-text">${stock.stock_id}</span> <span class="text-xs font-medium ios-text-muted">${stock.stock_name}</span>`;
+            item.addEventListener('click', () => { executeSearch(stock.stock_id); closeAllLists(); });
+            autoList.appendChild(item);
+        });
     });
-});
-searchInput.addEventListener('keydown', function(e) {
-    let items = autoList.getElementsByTagName('div');
-    if (e.key === 'ArrowDown') { currentFocus++; addActive(items); } else if (e.key === 'ArrowUp') { currentFocus--; addActive(items); } else if (e.key === 'Enter') {
-        e.preventDefault(); if (currentFocus > -1 && items.length > 0) items[currentFocus].click(); else { executeSearch(this.value); closeAllLists(); }
-    }
-});
-function addActive(items) { if (!items) return false; removeActive(items); if (currentFocus >= items.length) currentFocus = 0; if (currentFocus < 0) currentFocus = (items.length - 1); items[currentFocus].classList.add('autocomplete-active'); }
-function removeActive(items) { for (let i = 0; i < items.length; i++) items[i].classList.remove('autocomplete-active'); }
-function closeAllLists() { autoList.innerHTML = ''; autoList.classList.add('hidden'); }
-document.addEventListener('click', (e) => { if(e.target !== searchInput) closeAllLists(); });
-
-function executeSearch(query) {
-    if(!query) return; let targetId = query.trim().toUpperCase();
-    const found = allTaiwanStocks.find(s => s.stock_name === targetId); if (found) targetId = found.stock_id;
-    const match = targetId.match(/^([a-zA-Z0-9]+)/); if (match) targetId = match[1];
-    searchInput.value = targetId; switchView('analysis'); 
-    document.querySelectorAll('.tf-btn').forEach(b => {
-        if(parseInt(b.dataset.days) === currentAnalysisTimeframe) {
-            b.className = 'tf-btn px-5 py-1.5 rounded-lg text-sm font-bold ios-bg-primary-soft transition-all';
-        } else {
-            b.className = 'tf-btn px-5 py-1.5 rounded-lg text-sm font-medium ios-text-muted transition-all';
+    searchInput.addEventListener('keydown', function(e) {
+        let items = autoList.getElementsByTagName('div');
+        if (e.key === 'ArrowDown') { currentFocus++; addActive(items); } else if (e.key === 'ArrowUp') { currentFocus--; addActive(items); } else if (e.key === 'Enter') {
+            e.preventDefault(); if (currentFocus > -1 && items.length > 0) items[currentFocus].click(); else { executeSearch(this.value); closeAllLists(); }
         }
     });
+}
+function addActive(items) { if (!items) return false; removeActive(items); if (currentFocus >= items.length) currentFocus = 0; if (currentFocus < 0) currentFocus = (items.length - 1); items[currentFocus].classList.add('autocomplete-active'); }
+function removeActive(items) { for (let i = 0; i < items.length; i++) items[i].classList.remove('autocomplete-active'); }
+function closeAllLists() { if(autoList) { autoList.innerHTML = ''; autoList.classList.add('hidden'); } }
+document.addEventListener('click', (e) => { if(e.target !== searchInput) closeAllLists(); });
+
+// 修正 className null 問題的執行防護網
+function executeSearch(query) {
+    if(!query) return; 
+    let targetId = query.trim().toUpperCase();
+    const found = allTaiwanStocks.find(s => s.stock_name === targetId); 
+    if (found) targetId = found.stock_id;
+    const match = targetId.match(/^([a-zA-Z0-9]+)/); 
+    if (match) targetId = match[1];
+    
+    if(searchInput) searchInput.value = targetId; 
+    switchView('analysis'); 
+    
+    const tfButtons = document.querySelectorAll('.tf-btn');
+    if (tfButtons && tfButtons.length > 0) {
+        tfButtons.forEach(b => {
+            if (b) {
+                if(parseInt(b.dataset.days) === currentAnalysisTimeframe) {
+                    b.className = 'tf-btn px-5 py-1.5 rounded-lg text-sm font-bold ios-bg-primary-soft transition-all';
+                } else {
+                    b.className = 'tf-btn px-5 py-1.5 rounded-lg text-sm font-medium ios-text-muted transition-all';
+                }
+            }
+        });
+    }
     loadAnalysisData(targetId, currentAnalysisTimeframe); 
 }
-document.getElementById('main-search-btn').addEventListener('click', () => executeSearch(searchInput.value));
+
+const mainSearchBtn = document.getElementById('main-search-btn');
+if(mainSearchBtn) {
+    mainSearchBtn.addEventListener('click', () => {
+        if(searchInput) executeSearch(searchInput.value);
+    });
+}
 
 let watchlist = JSON.parse(localStorage.getItem('lin_watchlist')) || [{ symbol: '006208', name: '富邦台50', tf: 365 }];
 let trades = JSON.parse(localStorage.getItem('lin_trades')) || [];
@@ -191,8 +219,8 @@ function calculateLohas(closes) {
 function getZoneStatus(price, p2, p1, m1, m2) {
     if (price > p2) return { code: 'SELL', text: '極度高估', color: 'ios-bg-sell-soft ios-text-sell', textCol: 'ios-text-sell', rec: false };
     if (price > p1) return { code: 'SELL', text: '偏高估值', color: 'ios-bg-sell-soft ios-text-sell', textCol: 'ios-text-sell', rec: false };
-    if (price < m2) return { code: 'BUY', text: '極度恐懼 (買進)', color: 'ios-bg-buy-soft ios-text-buy', textCol: 'ios-text-buy', rec: true };
-    if (price < m1) return { code: 'BUY', text: '偏低估值 (買進)', color: 'ios-bg-buy-soft ios-text-buy', textCol: 'ios-text-buy', rec: true };
+    if (price < m2) return { code: 'BUY', text: '極度恐懼', color: 'ios-bg-buy-soft ios-text-buy', textCol: 'ios-text-buy', rec: true };
+    if (price < m1) return { code: 'BUY', text: '偏低估值', color: 'ios-bg-buy-soft ios-text-buy', textCol: 'ios-text-buy', rec: true };
     return { code: 'OBS', text: '觀望/續抱', color: 'bg-black/5 dark:bg-white/5 ios-text', textCol: 'ios-text-muted', rec: false };
 }
 
@@ -211,6 +239,7 @@ async function fetchAPI(symbol, days) {
 function renderWatchlistUI() {
     const tbody = document.getElementById('watchlist-table'); 
     const recGrid = document.getElementById('recommendation-grid');
+    if(!tbody || !recGrid) return;
     tbody.innerHTML = ''; recGrid.innerHTML = ''; let hasRec = false;
 
     watchlist.forEach(item => {
@@ -237,8 +266,10 @@ function renderWatchlistUI() {
 }
 
 async function scanWatchlist() {
-    document.getElementById('global-loader').classList.remove('hidden');
-    document.getElementById('loader-text').innerText = '同步中...';
+    const loader = document.getElementById('global-loader');
+    const loaderText = document.getElementById('loader-text');
+    if(loader) loader.classList.remove('hidden');
+    if(loaderText) loaderText.innerText = '同步中...';
     for (let i = 0; i < watchlist.length; i++) {
         const item = watchlist[i];
         try {
@@ -250,7 +281,7 @@ async function scanWatchlist() {
             if (i < watchlist.length - 1) await new Promise(resolve => setTimeout(resolve, 800)); 
         } catch (e) { console.warn(`無法掃描 ${item.symbol}`); }
     }
-    document.getElementById('global-loader').classList.add('hidden');
+    if(loader) loader.classList.add('hidden');
     renderWatchlistUI(); 
 }
 
@@ -262,16 +293,12 @@ function draw10KCombination(kData) {
     const range = globalHigh - globalLow || 1; 
     const mapY = (val) => 10 + 100 * ((globalHigh - val) / range);
     
-    // Resolve dynamic colors for drawing
     const styleObj = getComputedStyle(document.body);
-    const colorRed = styleObj.getPropertyValue('--sell-color').trim(); // Up in TW
-    const colorGreen = styleObj.getPropertyValue('--buy-color').trim(); // Down in TW
+    const colorRed = styleObj.getPropertyValue('--sell-color').trim(); 
+    const colorGreen = styleObj.getPropertyValue('--buy-color').trim(); 
     const colorGray = styleObj.getPropertyValue('--text-muted').trim();
     const colorBorder = styleObj.getPropertyValue('--border-color').trim();
 
-    let svgStr = `<svg width="100%" height="100%" viewBox="0 0 460 140" preserveAspectRatio="xMidYMid meet" class="overflow-visible"><line x1="0" y1="130" x2="430" y2="130" stroke="${colorBorder}" stroke-width="1"/></svg>`;
-    
-    // Rebuild SVG appending
     let elements = `<line x1="0" y1="130" x2="430" y2="130" stroke="${colorBorder}" stroke-width="1"/>`;
     recent10.forEach((k, idx) => {
         const xCenter = 30 + (idx * 40); 
@@ -285,7 +312,8 @@ function draw10KCombination(kData) {
     });
 
     elements += `<text x="440" y="${mapY(globalHigh) + 4}" font-size="10" font-weight="600" fill="${colorGray}" text-anchor="start">H:${globalHigh}</text><text x="440" y="${mapY(globalLow) + 4}" font-size="10" font-weight="600" fill="${colorGray}" text-anchor="start">L:${globalLow}</text>`;
-    document.getElementById('kline-drawing-area').innerHTML = `<svg width="100%" height="100%" viewBox="0 0 460 140" preserveAspectRatio="xMidYMid meet" class="overflow-visible">${elements}</svg>`;
+    const drawingArea = document.getElementById('kline-drawing-area');
+    if(drawingArea) drawingArea.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 460 140" preserveAspectRatio="xMidYMid meet" class="overflow-visible">${elements}</svg>`;
 
     let checks = [];
     const latest = recent10[9]; const prev = recent10[8]; const first = recent10[0];
@@ -302,11 +330,14 @@ function draw10KCombination(kData) {
 
     let html = '';
     checks.forEach(c => html += `<div class="flex items-center gap-2"><div class="w-1 h-1 bg-[var(--text-muted)] rounded-full"></div><span>${c}</span></div>`);
-    document.getElementById('ana-kline-checks').innerHTML = html || '<span class="ios-text-muted">無明顯極端特徵。</span>';
+    const checksArea = document.getElementById('ana-kline-checks');
+    if(checksArea) checksArea.innerHTML = html || '<span class="ios-text-muted">無明顯極端特徵。</span>';
 }
 
 async function loadAnalysisData(symbol, days) {
-    if(!myChart) myChart = echarts.init(document.getElementById('main-chart'));
+    const chartContainer = document.getElementById('main-chart');
+    if(!chartContainer) return;
+    if(!myChart) myChart = echarts.init(chartContainer);
     myChart.showLoading({ text: '載入中...', color: getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(), maskColor: 'transparent', textColor: getComputedStyle(document.documentElement).getPropertyValue('--text-main').trim() });
     
     try {
@@ -325,8 +356,9 @@ async function loadAnalysisData(symbol, days) {
             resLine = Math.max(...last10.map(d => d[3])); 
             supLine = Math.min(...last10.map(d => d[2])); 
         }
-        document.getElementById('ana-res').innerText = resLine !== '--' ? resLine.toFixed(2) : '--';
-        document.getElementById('ana-sup').innerText = supLine !== '--' ? supLine.toFixed(2) : '--';
+        
+        const elRes = document.getElementById('ana-res'); if(elRes) elRes.innerText = resLine !== '--' ? resLine.toFixed(2) : '--';
+        const elSup = document.getElementById('ana-sup'); if(elSup) elSup.innerText = supLine !== '--' ? supLine.toFixed(2) : '--';
 
         latestPricesCache[symbol] = { price: latest.close, name: data.name, status: status };
         saveData();
@@ -337,19 +369,24 @@ async function loadAnalysisData(symbol, days) {
             if (s.code === status.code) duration++; else break;
         }
 
-        document.getElementById('ana-date').innerText = latest.date; document.getElementById('ana-name').innerText = data.name;
-        document.getElementById('ana-symbol').innerText = symbol; document.getElementById('ana-price').innerText = latest.close.toFixed(2);
-        document.getElementById('ana-change').innerText = `${diff >= 0 ? '▲' : '▼'} ${Math.abs(diff)}`;
-        document.getElementById('ana-change').className = `text-lg font-medium mono mt-1 ${diff >= 0 ? 'ios-text-sell' : 'ios-text-buy'}`;
+        const elDate = document.getElementById('ana-date'); if(elDate) elDate.innerText = latest.date;
+        const elName = document.getElementById('ana-name'); if(elName) elName.innerText = data.name;
+        const elSym = document.getElementById('ana-symbol'); if(elSym) elSym.innerText = symbol;
+        const elPrice = document.getElementById('ana-price'); if(elPrice) elPrice.innerText = latest.close.toFixed(2);
+        const elChange = document.getElementById('ana-change'); 
+        if(elChange) {
+            elChange.innerText = `${diff >= 0 ? '+' : '-'}${Math.abs(diff)}`;
+            elChange.className = `text-lg font-medium mono mt-1 ${diff >= 0 ? 'ios-text-sell' : 'ios-text-buy'}`;
+        }
 
         const card = document.getElementById('ana-decision-card');
-        document.getElementById('ana-action').innerText = status.text.split(' ')[0]; document.getElementById('ana-zone').innerText = status.text.split(' ')[1] || status.text;
-        document.getElementById('ana-duration').innerText = `維持 ${duration} 天`;
-        card.className = `ios-surface rounded-2xl p-6 transition-colors duration-300 ${status.color}`;
+        const elAction = document.getElementById('ana-action'); if(elAction) elAction.innerText = status.text.split(' ')[0];
+        const elZone = document.getElementById('ana-zone'); if(elZone) elZone.innerText = status.text.split(' ')[1] || status.text;
+        const elDur = document.getElementById('ana-duration'); if(elDur) elDur.innerText = `維持 ${duration} 天`;
+        if(card) card.className = `ios-surface rounded-2xl p-6 transition-colors duration-300 ${status.color}`;
 
         draw10KCombination(kData);
 
-        // Chart dynamic colors
         const styleObj = getComputedStyle(document.documentElement);
         const txtCol = styleObj.getPropertyValue('--text-muted').trim();
         const splitCol = styleObj.getPropertyValue('--border-color').trim();
@@ -378,28 +415,47 @@ async function loadAnalysisData(symbol, days) {
     } catch (e) { showUIError(e.message); } finally { myChart.hideLoading(); }
 }
 
-document.querySelectorAll('.tf-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        document.querySelectorAll('.tf-btn').forEach(b => b.className = 'tf-btn px-5 py-1.5 rounded-lg text-sm font-medium ios-text-muted transition-all');
-        e.target.className = 'tf-btn px-5 py-1.5 rounded-lg text-sm font-bold ios-bg-primary-soft transition-all';
-        currentAnalysisTimeframe = parseInt(e.target.dataset.days);
-        loadAnalysisData(document.getElementById('main-symbol-input').value, currentAnalysisTimeframe);
+const tfBtnElements = document.querySelectorAll('.tf-btn');
+if (tfBtnElements) {
+    tfBtnElements.forEach(btn => {
+        if (btn) {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.tf-btn').forEach(b => {
+                    if (b) b.className = 'tf-btn px-5 py-1.5 rounded-lg text-sm font-medium ios-text-muted transition-all';
+                });
+                e.target.className = 'tf-btn px-5 py-1.5 rounded-lg text-sm font-bold ios-bg-primary-soft transition-all';
+                currentAnalysisTimeframe = parseInt(e.target.dataset.days);
+                const inputEl = document.getElementById('main-symbol-input');
+                if(inputEl) loadAnalysisData(inputEl.value, currentAnalysisTimeframe);
+            });
+        }
     });
-});
+}
 
 function addWatchlist() {
-    const sym = document.getElementById('watch-symbol').value.toUpperCase();
-    const tf = parseInt(document.getElementById('watch-tf').value);
+    const symEl = document.getElementById('watch-symbol');
+    const tfEl = document.getElementById('watch-tf');
+    if(!symEl || !tfEl) return;
+    const sym = symEl.value.toUpperCase();
+    const tf = parseInt(tfEl.value);
     if (sym && !watchlist.find(w => w.symbol === sym)) { watchlist.push({ symbol: sym, name: '載入中', tf }); saveData(); closeModal('add-watch-modal'); renderWatchlistUI(); }
 }
 function removeWatchlist(sym) { watchlist = watchlist.filter(w => w.symbol !== sym); saveData(); renderWatchlistUI(); }
 
 function saveTrade() {
-    const sym = document.getElementById('trade-symbol').value.toUpperCase();
-    const date = document.getElementById('trade-date').value;
-    const price = parseFloat(document.getElementById('trade-price').value);
-    const shares = parseInt(document.getElementById('trade-shares').value);
-    const note = document.getElementById('trade-note').value;
+    const symEl = document.getElementById('trade-symbol');
+    const dateEl = document.getElementById('trade-date');
+    const priceEl = document.getElementById('trade-price');
+    const sharesEl = document.getElementById('trade-shares');
+    const noteEl = document.getElementById('trade-note');
+    if(!symEl || !dateEl || !priceEl || !sharesEl) return;
+    
+    const sym = symEl.value.toUpperCase();
+    const date = dateEl.value;
+    const price = parseFloat(priceEl.value);
+    const shares = parseInt(sharesEl.value);
+    const note = noteEl ? noteEl.value : '';
+    
     if(sym && date && price && shares) {
         trades.push({ id: Date.now(), sym, date, price, shares, totalCost: price * shares, note });
         saveData(); closeModal('add-trade-modal'); renderTradesUI(); 
@@ -410,6 +466,7 @@ function removeTrade(id) { trades = trades.filter(t => t.id !== id); saveData();
 function renderTradesUI() {
     const tbody = document.getElementById('portfolio-table'); 
     const empty = document.getElementById('portfolio-empty');
+    if(!tbody || !empty) return;
     tbody.innerHTML = '';
     
     if (trades.length === 0) { empty.classList.remove('hidden'); return; } 
@@ -453,7 +510,7 @@ function renderTradesUI() {
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     fetchAllStocks(); 
-    document.getElementById('trade-date').valueAsDate = new Date();
+    const d = document.getElementById('trade-date'); if(d) d.valueAsDate = new Date();
     window.addEventListener('resize', () => { if(myChart) myChart.resize(); });
     switchView('home'); 
 });
