@@ -3,54 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIN Quant | 專業量化與資產終端</title>
+    <title>LIN Quant | iOS Pro Terminal</title>
+    <script>
+        // 初始化主題以防止閃爍
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('lin_theme') || 'light');
+        document.documentElement.setAttribute('data-accent', localStorage.getItem('lin_accent') || 'blue');
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="text-slate-900 antialiased min-h-screen flex flex-col">
+<body class="antialiased min-h-screen flex flex-col">
 
-    <!-- 頂部滿版導覽列 -->
-    <nav class="sticky top-0 z-50 glass px-6 py-0 shadow-sm w-full">
+    <nav class="sticky top-0 z-40 ios-glass px-6 py-0 w-full">
         <div class="w-full mx-auto flex justify-between items-center h-16">
             <div class="flex items-center gap-3">
-                <div class="bg-indigo-600 p-1.5 rounded-lg shadow-lg shadow-indigo-200">
-                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                <div class="ios-btn-primary p-1.5 rounded-lg shadow-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                 </div>
-                <span class="font-extrabold text-xl tracking-tight text-slate-800">LIN <span class="text-indigo-600">Quant</span></span>
+                <span class="font-bold text-xl tracking-tight ios-text">LIN <span class="ios-text-primary">Quant</span></span>
             </div>
             <div class="flex h-full gap-6">
-                <button onclick="switchView('home')" id="tab-home" class="tab-active h-full px-2 flex items-center transition-colors">首頁雷達</button>
-                <button onclick="switchView('analysis')" id="tab-analysis" class="tab-inactive h-full px-2 flex items-center transition-colors hover:text-indigo-500">滿版深度分析</button>
-                <button onclick="switchView('portfolio')" id="tab-portfolio" class="tab-inactive h-full px-2 flex items-center transition-colors hover:text-indigo-500">資產損益帳本</button>
+                <button onclick="switchView('home')" id="tab-home" class="tab-active h-full px-2 flex items-center transition-colors">雷達</button>
+                <button onclick="switchView('analysis')" id="tab-analysis" class="tab-inactive h-full px-2 flex items-center transition-colors">深度分析</button>
+                <button onclick="switchView('portfolio')" id="tab-portfolio" class="tab-inactive h-full px-2 flex items-center transition-colors">帳本</button>
             </div>
         </div>
     </nav>
 
-    <div id="global-loader" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-40 flex flex-col items-center justify-center hidden">
-        <div class="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-        <p class="mt-4 font-bold text-indigo-800" id="loader-text">AI 運算中...</p>
+    <div id="global-loader" class="fixed inset-0 ios-glass z-50 flex flex-col items-center justify-center hidden">
+        <div class="w-10 h-10 border-4 ios-border border-t-[var(--primary-color)] rounded-full animate-spin"></div>
+        <p class="mt-4 font-bold ios-text-primary text-sm" id="loader-text">載入中...</p>
+    </div>
+
+    <!-- 懸浮設定按鈕 -->
+    <button onclick="toggleSettings()" class="fixed bottom-8 left-8 w-12 h-12 rounded-full ios-surface shadow-lg flex items-center justify-center z-40 hover:scale-105 transition-transform cursor-pointer">
+        <svg class="w-5 h-5 ios-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+    </button>
+
+    <!-- 主題設定 Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden opacity-0 transition-opacity">
+        <div class="ios-surface w-full sm:w-96 rounded-t-3xl sm:rounded-3xl p-8 transform translate-y-full sm:translate-y-0 transition-transform duration-300">
+            <h3 class="text-xl font-bold ios-text mb-6">外觀設定</h3>
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-xs font-bold ios-text-muted mb-3 uppercase tracking-wider">深色模式</label>
+                    <div class="flex gap-2 p-1 ios-bg rounded-lg border ios-border">
+                        <button onclick="setTheme('light')" id="btn-theme-light" class="flex-1 py-1.5 text-sm font-bold rounded-md transition-colors">淺色</button>
+                        <button onclick="setTheme('dark')" id="btn-theme-dark" class="flex-1 py-1.5 text-sm font-bold rounded-md transition-colors">深色</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold ios-text-muted mb-3 uppercase tracking-wider">強調色系</label>
+                    <div class="flex gap-4">
+                        <button onclick="setAccent('blue')" class="w-8 h-8 rounded-full bg-[#007aff] ring-2 ring-offset-2 ring-transparent focus:ring-[#007aff] transition-all"></button>
+                        <button onclick="setAccent('orange')" class="w-8 h-8 rounded-full bg-[#ff9500] ring-2 ring-offset-2 ring-transparent focus:ring-[#ff9500] transition-all"></button>
+                        <button onclick="setAccent('black')" class="w-8 h-8 rounded-full bg-[#1d1d1f] dark:bg-white border border-gray-300 ring-2 ring-offset-2 ring-transparent focus:ring-gray-400 transition-all"></button>
+                        <button onclick="setAccent('gray')" class="w-8 h-8 rounded-full bg-[#8e8e93] ring-2 ring-offset-2 ring-transparent focus:ring-[#8e8e93] transition-all"></button>
+                    </div>
+                </div>
+            </div>
+            <button onclick="toggleSettings()" class="w-full mt-8 py-3 rounded-xl ios-btn-primary font-bold text-sm">完成</button>
+        </div>
     </div>
 
     <!-- 首頁雷達 -->
     <main id="view-home" class="w-full px-6 py-8 flex-1">
         <div class="flex justify-between items-end mb-6">
-            <div><h1 class="text-3xl font-black text-slate-800 tracking-tight">主動式 AI 智能雷達</h1><p class="text-slate-500 text-sm mt-1">系統已自動掃描下方自選股，並將符合買進條件之標的推播至推薦區。</p></div>
-            <button onclick="scanWatchlist()" class="bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg hover:bg-indigo-700 transition-colors flex items-center gap-2">立即重掃描</button>
+            <div>
+                <h1 class="text-3xl font-bold ios-text tracking-tight">智能雷達</h1>
+                <p class="ios-text-muted text-sm mt-1">系統已自動掃描監控清單，提供客觀決策參考。</p>
+            </div>
+            <button onclick="scanWatchlist()" class="ios-btn-primary px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2">同步清單</button>
         </div>
-        <h2 class="text-lg font-extrabold text-slate-800 mb-4 flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.7)]"></span> 系統推薦買進標的 (落入恐懼區間)</h2>
+        
+        <h2 class="text-sm font-bold ios-text-muted mb-4 uppercase tracking-wider flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-[var(--buy-color)] animate-pulse"></span> 系統推薦標的
+        </h2>
         <div id="recommendation-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-10"></div>
+        
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-lg font-extrabold text-slate-800">自選股監控清單</h2>
-            <button onclick="document.getElementById('add-watch-modal').classList.remove('hidden')" class="text-indigo-600 font-bold hover:bg-indigo-50 px-3 py-1.5 rounded-lg transition-colors">+ 新增自選</button>
+            <h2 class="text-sm font-bold ios-text-muted uppercase tracking-wider">監控清單</h2>
+            <button onclick="document.getElementById('add-watch-modal').classList.remove('hidden')" class="ios-text-primary font-bold text-sm">新增</button>
         </div>
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="ios-surface rounded-2xl shadow-sm overflow-hidden">
             <table class="w-full text-left text-sm">
-                <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
-                    <tr><th class="px-8 py-5 font-bold">代碼標的</th><th class="px-6 py-5 font-bold">設定觀望時長</th><th class="px-6 py-5 font-bold text-right">最新收盤價</th><th class="px-6 py-5 font-bold text-center">AI 狀態判定</th><th class="px-8 py-5 font-bold text-center">操作</th></tr>
+                <thead class="bg-black/5 dark:bg-white/5 ios-text-muted uppercase text-xs">
+                    <tr><th class="px-6 py-4 font-medium">標的</th><th class="px-6 py-4 font-medium">觀望時長</th><th class="px-6 py-4 font-medium text-right">收盤價</th><th class="px-6 py-4 font-medium text-center">判定狀態</th><th class="px-6 py-4 font-medium text-center">操作</th></tr>
                 </thead>
-                <tbody id="watchlist-table" class="divide-y divide-slate-100"></tbody>
+                <tbody id="watchlist-table" class="divide-y ios-border"></tbody>
             </table>
         </div>
     </main>
@@ -59,84 +100,94 @@
     <main id="view-analysis" class="w-full px-6 py-8 flex-1 hidden">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div class="relative w-full md:w-[400px]">
-                <input type="text" id="main-symbol-input" placeholder="輸入代碼或名稱 (支援下拉選單)" autocomplete="off" class="bg-white border-2 border-slate-200 rounded-xl pl-4 pr-12 py-2.5 focus:outline-none focus:border-indigo-500 w-full font-bold shadow-sm text-lg uppercase transition-colors">
-                <button id="main-search-btn" class="absolute right-2 top-2 p-1.5 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></button>
-                <div id="autocomplete-list" class="autocomplete-dropdown hidden"></div>
+                <input type="text" id="main-symbol-input" placeholder="輸入代碼或名稱" autocomplete="off" class="ios-surface ios-text rounded-xl pl-4 pr-12 py-2.5 focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] w-full font-medium text-base uppercase transition-colors">
+                <button id="main-search-btn" class="absolute right-2 top-2 p-1.5 ios-btn-primary rounded-lg shadow-sm"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></button>
+                <div id="autocomplete-list" class="autocomplete-dropdown ios-surface hidden"></div>
             </div>
-            <div class="flex bg-slate-100 p-1.5 rounded-xl border border-slate-200 shadow-inner">
-                <button data-days="180" class="tf-btn px-6 py-2 rounded-lg text-sm font-bold text-slate-500 transition-all">半年</button>
-                <button data-days="365" class="tf-btn px-6 py-2 rounded-lg text-sm font-bold bg-white text-indigo-600 shadow-sm transition-all">1 年</button>
-                <button data-days="1277" class="tf-btn px-6 py-2 rounded-lg text-sm font-bold text-slate-500 transition-all">3.5 年</button>
+            <div class="flex p-1 rounded-xl ios-surface">
+                <button data-days="180" class="tf-btn px-5 py-1.5 rounded-lg text-sm font-medium ios-text-muted transition-all">半年</button>
+                <button data-days="365" class="tf-btn px-5 py-1.5 rounded-lg text-sm font-bold ios-bg-primary-soft transition-all">1 年</button>
+                <button data-days="1277" class="tf-btn px-5 py-1.5 rounded-lg text-sm font-medium ios-text-muted transition-all">3.5 年</button>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-6 h-auto">
+        <div class="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-6">
             <div class="xl:col-span-1 flex flex-col gap-6">
                 <!-- 報價卡 -->
-                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
-                    <div class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-2" id="ana-date">--/--/--</div>
-                    <h1 class="text-4xl font-black text-slate-800 tracking-tight" id="ana-name">載入中</h1>
-                    <div class="text-xl font-bold text-slate-400 mono mb-6" id="ana-symbol">----</div>
-                    <div class="text-6xl font-black text-slate-900 tracking-tighter mono" id="ana-price">--.--</div>
-                    <div class="text-xl font-bold mono mt-2" id="ana-change">---</div>
+                <div class="ios-surface rounded-2xl shadow-sm p-6">
+                    <div class="ios-text-muted text-[10px] font-bold uppercase tracking-widest mb-1" id="ana-date">--/--/--</div>
+                    <h1 class="text-3xl font-bold ios-text tracking-tight" id="ana-name">無資料</h1>
+                    <div class="text-sm font-medium ios-text-muted mono mb-6" id="ana-symbol">----</div>
+                    <div class="text-5xl font-light ios-text tracking-tighter mono" id="ana-price">--.--</div>
+                    <div class="text-lg font-medium mono mt-1 ios-text-muted" id="ana-change">---</div>
                 </div>
+                
                 <!-- 決策卡 -->
-                <div id="ana-decision-card" class="bg-slate-800 rounded-3xl shadow-xl p-8 text-white transition-colors duration-500">
-                    <h3 class="text-white/60 text-xs font-bold uppercase tracking-widest mb-6 flex items-center justify-between">
-                        系統判定 <span id="ana-duration" class="bg-white/20 px-3 py-1 rounded text-[11px]">-- 天</span>
+                <div class="ios-surface rounded-2xl shadow-sm p-6">
+                    <h3 class="ios-text-muted text-[10px] font-bold uppercase tracking-widest mb-4 flex items-center justify-between">
+                        系統演算判定 <span id="ana-duration" class="bg-black/5 dark:bg-white/10 px-2 py-0.5 rounded text-[10px] ios-text">-- 天</span>
                     </h3>
-                    <div id="ana-action" class="text-3xl font-black tracking-tight mb-2">運算中...</div>
-                    <div id="ana-zone" class="text-base font-medium text-white/80">---</div>
+                    <div id="ana-action" class="text-2xl font-bold tracking-tight mb-1 ios-text">等待運算</div>
+                    <div id="ana-zone" class="text-xs font-medium ios-text-muted">---</div>
+                    
+                    <div class="grid grid-cols-2 gap-3 mt-6 pt-5 border-t ios-border">
+                        <div class="bg-black/5 dark:bg-white/5 rounded-lg p-2.5">
+                            <div class="text-[9px] ios-text-muted uppercase tracking-widest mb-1">雙週壓力</div>
+                            <div class="text-base font-medium mono ios-text-sell" id="ana-res">--</div>
+                        </div>
+                        <div class="bg-black/5 dark:bg-white/5 rounded-lg p-2.5">
+                            <div class="text-[9px] ios-text-muted uppercase tracking-widest mb-1">雙週支撐</div>
+                            <div class="text-base font-medium mono ios-text-buy" id="ana-sup">--</div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- 3K 組合教學卡片 -->
-                <div class="bg-white border border-slate-200 shadow-sm rounded-3xl p-6 flex-1 flex flex-col">
-                    <h3 class="text-slate-800 text-sm font-black mb-4 flex items-center justify-between">
-                        <span class="flex items-center gap-2"><svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>近期 3K 組合型態</span>
-                    </h3>
-                    <div class="bg-slate-50 rounded-2xl border border-slate-200 p-4 flex flex-col items-center justify-center mb-4 shadow-inner relative overflow-hidden">
-                        <div id="kline-drawing-area" class="w-full flex justify-center py-2"></div>
+                <!-- 10K 組合 -->
+                <div class="ios-surface rounded-2xl shadow-sm p-6 flex-1 flex flex-col">
+                    <h3 class="ios-text-muted text-[10px] font-bold uppercase tracking-widest mb-4">近雙週 (10K) 型態</h3>
+                    <div class="bg-black/5 dark:bg-white/5 rounded-xl p-3 flex flex-col items-center justify-center mb-4 relative overflow-hidden ios-border border">
+                        <div id="kline-drawing-area" class="w-full flex justify-center py-2 h-32"></div>
                     </div>
-                    <div id="ana-kline-checks" class="space-y-2 mb-2 text-sm"></div>
+                    <div id="ana-kline-checks" class="space-y-2 mb-2 text-xs ios-text"></div>
                 </div>
             </div>
 
             <!-- 右側圖表 -->
             <div class="xl:col-span-3 flex flex-col gap-6">
-                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 flex flex-col h-[700px]">
-                    <div class="flex justify-between items-center mb-2">
-                        <div class="font-bold text-slate-700">樂活五線譜完整分析 (LOHAS 5 Bands)</div>
-                        <div class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">資料來源: FinMind Open Data</div>
+                <div class="ios-surface rounded-2xl shadow-sm p-6 flex flex-col h-[700px]">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="font-bold text-sm ios-text">經典樂活五線譜</div>
+                        <div class="text-[10px] ios-text-muted uppercase tracking-widest">FinMind Data</div>
                     </div>
                     <div id="main-chart" class="chart-container flex-1"></div>
                 </div>
 
-                <!-- 🌟 五大維度決策系統 -->
-                <div class="bg-indigo-50 border border-indigo-100 shadow-sm rounded-3xl p-6">
-                    <h3 class="text-indigo-800 text-base font-black mb-4 flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                        經理人五大維度決策防線
+                <!-- 五大維度決策防線 -->
+                <div class="ios-bg-primary-soft rounded-2xl p-6">
+                    <h3 class="ios-text-primary text-sm font-bold mb-4 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        經理人檢核表 (五大維度)
                     </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                        <label class="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-200 hover:border-indigo-400 cursor-pointer shadow-sm transition-colors">
-                            <div class="flex items-center gap-2"><input type="checkbox" class="check-custom"><span class="font-bold text-sm text-slate-800">1. 基本面</span></div>
-                            <span class="text-xs text-slate-500 leading-relaxed">營收持續成長、EPS 穩定，無財報衰退疑慮。</span>
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+                        <label class="flex flex-col gap-2 p-3 ios-surface rounded-xl cursor-pointer shadow-sm transition-colors group">
+                            <div class="flex items-center gap-2"><input type="checkbox" class="ios-checkbox"><span class="font-bold text-xs ios-text transition-colors">1. 基本面</span></div>
+                            <ul class="text-[10px] ios-text-muted space-y-1 pl-1"><li>- 營收 YoY 連續 3 個月 > 0</li><li>- 毛利率未見衰退</li><li>- 近四季 ROE > 15%</li></ul>
                         </label>
-                        <label class="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-200 hover:border-indigo-400 cursor-pointer shadow-sm transition-colors">
-                            <div class="flex items-center gap-2"><input type="checkbox" class="check-custom"><span class="font-bold text-sm text-slate-800">2. 技術面</span></div>
-                            <span class="text-xs text-slate-500 leading-relaxed">目前位階非極度高估 (+2SD)，出現買進形態確認。</span>
+                        <label class="flex flex-col gap-2 p-3 ios-surface rounded-xl cursor-pointer shadow-sm transition-colors group">
+                            <div class="flex items-center gap-2"><input type="checkbox" class="ios-checkbox"><span class="font-bold text-xs ios-text transition-colors">2. 技術面</span></div>
+                            <ul class="text-[10px] ios-text-muted space-y-1 pl-1"><li>- 位階處於中線或低估區</li><li>- 站上月線且斜率向上</li><li>- 底部爆量或突破壓力</li></ul>
                         </label>
-                        <label class="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-200 hover:border-indigo-400 cursor-pointer shadow-sm transition-colors">
-                            <div class="flex items-center gap-2"><input type="checkbox" class="check-custom"><span class="font-bold text-sm text-slate-800">3. 籌碼面</span></div>
-                            <span class="text-xs text-slate-500 leading-relaxed">外資/投信無連續大賣，融資餘額無異常攀升。</span>
+                        <label class="flex flex-col gap-2 p-3 ios-surface rounded-xl cursor-pointer shadow-sm transition-colors group">
+                            <div class="flex items-center gap-2"><input type="checkbox" class="ios-checkbox"><span class="font-bold text-xs ios-text transition-colors">3. 籌碼面</span></div>
+                            <ul class="text-[10px] ios-text-muted space-y-1 pl-1"><li>- 近 5 日法人買多於賣</li><li>- 盤整區間融資遞減</li><li>- 大戶持股比例攀升</li></ul>
                         </label>
-                        <label class="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-200 hover:border-indigo-400 cursor-pointer shadow-sm transition-colors">
-                            <div class="flex items-center gap-2"><input type="checkbox" class="check-custom"><span class="font-bold text-sm text-slate-800">4. 總經大氣候</span></div>
-                            <span class="text-xs text-slate-500 leading-relaxed">產業處於復甦或上升週期，不受利率利空打壓。</span>
+                        <label class="flex flex-col gap-2 p-3 ios-surface rounded-xl cursor-pointer shadow-sm transition-colors group">
+                            <div class="flex items-center gap-2"><input type="checkbox" class="ios-checkbox"><span class="font-bold text-xs ios-text transition-colors">4. 大氣候</span></div>
+                            <ul class="text-[10px] ios-text-muted space-y-1 pl-1"><li>- 處於降息或利率見頂</li><li>- 產業存貨周轉下降</li><li>- 展望指引為正向</li></ul>
                         </label>
-                        <label class="flex flex-col gap-2 p-4 bg-white rounded-2xl border border-slate-200 hover:border-indigo-400 cursor-pointer shadow-sm transition-colors">
-                            <div class="flex items-center gap-2"><input type="checkbox" class="check-custom"><span class="font-bold text-sm text-slate-800">5. 風險控管</span></div>
-                            <span class="text-xs text-slate-500 leading-relaxed">資金配置不超過總資產 20%，已設定明確停損點。</span>
+                        <label class="flex flex-col gap-2 p-3 ios-surface rounded-xl cursor-pointer shadow-sm transition-colors group">
+                            <div class="flex items-center gap-2"><input type="checkbox" class="ios-checkbox"><span class="font-bold text-xs ios-text transition-colors">5. 控風險</span></div>
+                            <ul class="text-[10px] ios-text-muted space-y-1 pl-1"><li>- 虧損鎖定總資產 2%</li><li>- 跌破關鍵支撐停損</li><li>- 盤整逾 20 日撤出</li></ul>
                         </label>
                     </div>
                 </div>
@@ -144,69 +195,58 @@
         </div>
     </main>
 
-    <!-- 視圖 3：資產損益帳本 -->
+    <!-- 視圖 3：資產帳本 -->
     <main id="view-portfolio" class="w-full px-6 py-8 flex-1 hidden">
         <div class="flex justify-between items-end mb-6">
             <div>
-                <h1 class="text-3xl font-black text-slate-800 tracking-tight">資產未實現損益分析</h1>
-                <p class="text-slate-500 text-sm mt-1">系統將自動獲取最新收盤價，為您計算每筆買進部位的「即時未實現損益」。</p>
+                <h1 class="text-3xl font-bold ios-text tracking-tight">未實現損益分析</h1>
+                <p class="ios-text-muted text-sm mt-1">系統將擷取最新市價，計算持倉現況。</p>
             </div>
-            <button onclick="document.getElementById('add-trade-modal').classList.remove('hidden')" class="bg-indigo-600 text-white px-6 py-3 rounded-xl text-sm font-bold shadow-lg hover:bg-indigo-700 transition-colors flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> 記錄新買點
-            </button>
+            <button onclick="document.getElementById('add-trade-modal').classList.remove('hidden')" class="ios-btn-primary px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2">新增紀錄</button>
         </div>
-
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="ios-surface rounded-2xl shadow-sm overflow-hidden">
             <table class="w-full text-left text-sm">
-                <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
-                    <tr>
-                        <th class="px-6 py-5">買進日期</th>
-                        <th class="px-6 py-5">代碼標的</th>
-                        <th class="px-6 py-5 text-right">投入成本 (單價)</th>
-                        <th class="px-6 py-5 text-right">股數</th>
-                        <th class="px-6 py-5 text-right">最新市價</th>
-                        <th class="px-6 py-5 text-right">未實現損益 (ROI)</th>
-                        <th class="px-6 py-5">備註策略</th>
-                        <th class="px-6 py-5 text-center">操作</th>
-                    </tr>
+                <thead class="bg-black/5 dark:bg-white/5 ios-text-muted uppercase text-xs">
+                    <tr><th class="px-6 py-4 font-medium">日期</th><th class="px-6 py-4 font-medium">標的</th><th class="px-6 py-4 font-medium text-right">成本價</th><th class="px-6 py-4 font-medium text-right">股數</th><th class="px-6 py-4 font-medium text-right">最新市價</th><th class="px-6 py-4 font-medium text-right">報酬率 (ROI)</th><th class="px-6 py-4 font-medium">筆記</th><th class="px-6 py-4 font-medium text-center">操作</th></tr>
                 </thead>
-                <tbody id="portfolio-table" class="divide-y divide-slate-100"></tbody>
+                <tbody id="portfolio-table" class="divide-y ios-border"></tbody>
             </table>
-            <div id="portfolio-empty" class="hidden p-12 text-center text-slate-400 font-bold text-lg border-t border-slate-100">
-                尚未記錄任何交易部位。
-            </div>
+            <div id="portfolio-empty" class="hidden p-12 text-center ios-text-muted font-medium text-sm border-t ios-border">無交易紀錄。</div>
         </div>
     </main>
 
-    <!-- Modal：新增自選股 -->
-    <div id="add-watch-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
-        <div class="bg-white rounded-3xl p-8 w-[400px] shadow-2xl">
-            <h3 class="text-xl font-black mb-6">新增自選股監控</h3>
-            <div class="space-y-5">
-                <div><input type="text" id="watch-symbol" placeholder="代碼 (如 006208)" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold uppercase focus:border-indigo-500 outline-none"></div>
-                <div><select id="watch-tf" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold focus:border-indigo-500 outline-none"><option value="180">半年 (短線)</option><option value="365" selected>1 年 (中線)</option><option value="1277">3.5 年 (長線)</option></select></div>
+    <!-- Modal：自選股 -->
+    <div id="add-watch-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity">
+        <div class="ios-surface rounded-2xl p-6 w-[320px] shadow-xl transform scale-95 transition-transform">
+            <h3 class="text-lg font-bold ios-text mb-4">新增監控</h3>
+            <div class="space-y-4">
+                <div><input type="text" id="watch-symbol" placeholder="代碼" class="w-full ios-surface ios-text border rounded-lg p-2.5 text-sm uppercase outline-none focus:border-[var(--primary-color)]"></div>
+                <div><select id="watch-tf" class="w-full ios-surface ios-text border rounded-lg p-2.5 text-sm outline-none"><option value="180">半年 (短線)</option><option value="365" selected>1 年 (中線)</option><option value="1277">3.5 年 (長線)</option></select></div>
             </div>
-            <div class="mt-8 flex justify-end gap-3"><button onclick="document.getElementById('add-watch-modal').classList.add('hidden')" class="px-5 py-2.5 text-sm font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors">取消</button><button onclick="addWatchlist()" class="px-5 py-2.5 text-sm font-bold bg-indigo-600 text-white rounded-xl shadow-md hover:bg-indigo-700 transition-colors">儲存</button></div>
+            <div class="mt-6 flex justify-end gap-2"><button onclick="closeModal('add-watch-modal')" class="px-4 py-2 text-sm font-medium ios-text-muted">取消</button><button onclick="addWatchlist()" class="px-4 py-2 text-sm font-bold ios-btn-primary rounded-lg">儲存</button></div>
         </div>
     </div>
 
     <!-- Modal：新增部位 -->
-    <div id="add-trade-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
-        <div class="bg-white rounded-3xl p-8 w-[36rem] shadow-2xl">
-            <h3 class="text-xl font-black mb-6">記錄建倉部位</h3>
-            <div class="grid grid-cols-2 gap-5">
-                <div class="col-span-2 md:col-span-1"><label class="block text-xs font-bold text-slate-500 mb-2">代碼</label><input type="text" id="trade-symbol" placeholder="006208" class="w-full border-2 border-slate-200 rounded-xl p-3 uppercase font-bold outline-none"></div>
-                <div class="col-span-2 md:col-span-1"><label class="block text-xs font-bold text-slate-500 mb-2">建倉日期</label><input type="date" id="trade-date" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold outline-none"></div>
-                <input type="hidden" id="trade-type" value="BUY">
-                <div><label class="block text-xs font-bold text-slate-500 mb-2">買進均價</label><input type="number" id="trade-price" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold mono outline-none"></div>
-                <div><label class="block text-xs font-bold text-slate-500 mb-2">股數</label><input type="number" id="trade-shares" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold mono outline-none"></div>
-                <div class="col-span-2"><label class="block text-xs font-bold text-slate-500 mb-2">策略筆記 (檢查五大維度)</label><input type="text" id="trade-note" placeholder="如：跌至 -1SD 分批建倉，基本面確認無虞" class="w-full border-2 border-slate-200 rounded-xl p-3 font-medium outline-none"></div>
+    <div id="add-trade-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity">
+        <div class="ios-surface rounded-2xl p-6 w-[480px] shadow-xl transform scale-95 transition-transform">
+            <h3 class="text-lg font-bold ios-text mb-4">記錄建倉</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="col-span-2 md:col-span-1"><input type="text" id="trade-symbol" placeholder="代碼" class="w-full ios-surface ios-text border rounded-lg p-2.5 text-sm uppercase outline-none focus:border-[var(--primary-color)]"></div>
+                <div class="col-span-2 md:col-span-1"><input type="date" id="trade-date" class="w-full ios-surface ios-text border rounded-lg p-2.5 text-sm outline-none"></div>
+                <div><input type="number" id="trade-price" placeholder="買進均價" class="w-full ios-surface ios-text border rounded-lg p-2.5 text-sm mono outline-none"></div>
+                <div><input type="number" id="trade-shares" placeholder="股數" class="w-full ios-surface ios-text border rounded-lg p-2.5 text-sm mono outline-none"></div>
+                <div class="col-span-2"><input type="text" id="trade-note" placeholder="策略筆記" class="w-full ios-surface ios-text border rounded-lg p-2.5 text-sm outline-none"></div>
             </div>
-            <div class="mt-8 flex justify-end gap-3"><button onclick="document.getElementById('add-trade-modal').classList.add('hidden')" class="px-5 py-2.5 text-sm font-bold text-slate-500 hover:bg-slate-100 rounded-xl">取消</button><button onclick="saveTrade()" class="px-5 py-2.5 text-sm font-bold bg-indigo-600 text-white rounded-xl hover:bg-indigo-700">入帳並追蹤</button></div>
+            <div class="mt-6 flex justify-end gap-2"><button onclick="closeModal('add-trade-modal')" class="px-4 py-2 text-sm font-medium ios-text-muted">取消</button><button onclick="saveTrade()" class="px-4 py-2 text-sm font-bold ios-btn-primary rounded-lg">入帳</button></div>
         </div>
     </div>
 
-    <!-- 載入外部 JS -->
+    <!-- 專屬 Footer (極簡化) -->
+    <footer class="mt-auto py-5 text-center text-[10px] ios-text-muted opacity-40 font-medium tracking-[0.2em] uppercase">
+        DESIGN BY LINCY | 別人恐懼我買進
+    </footer>
+
     <script src="app.js"></script>
 </body>
 </html>
